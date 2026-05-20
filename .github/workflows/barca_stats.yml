@@ -1,0 +1,43 @@
+name: FC Barcelona Stats Scraper
+
+on:
+  workflow_dispatch:
+    # Solo se ejecuta cuando tú presionas manualmente el botón "Run workflow"
+
+permissions:
+  contents: write # Permiso crucial para que el Action guarde los ficheros devueltos en tu repositorio
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del código fuente
+      uses: actions/checkout@v4
+
+    - name: Configurar entorno de Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependencias necesarias
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas beautifulsoup4 requests lxml tabulate
+
+    - name: Ejecutar scraping de datos reales
+      run: |
+        python get_barca_stats.py
+
+    - name: Subir resultados como artefactos de GitHub (Descarga web)
+      uses: actions/upload-artifact@v4
+      with:
+        name: datos-reales-barca
+        path: resultados/
+
+    - name: Commitear y guardar ficheros en el propio repositorio
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add resultados/
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Actualización: Ficheros de estadísticas reales [skip ci]" && git push)
