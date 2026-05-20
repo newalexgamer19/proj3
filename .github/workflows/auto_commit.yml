@@ -1,0 +1,46 @@
+name: Auto Action Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Permite ejecutar manualmente desde GitHub
+
+jobs:
+  execute-action:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Run action script
+        run: python action_script.py
+
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+
+      - name: Commit changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add execution_log.json
+            git commit -m "📊 Auto-update: execution log registered at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          else
+            echo "No changes to commit"
+          fi
+
+      - name: Push changes
+        run: |
+          git push origin HEAD:main || git push origin HEAD:master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
